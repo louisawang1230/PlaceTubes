@@ -1,85 +1,35 @@
 import numpy as np
 
-np.random.seed(11)
-
-bowls = np.zeros(8)
-bowls = [10, 10, 10, 10, 10, 10, 10, 10]
+np.random.seed(1)
 
 tubes = [
 	0,  # i only occupies the region under it, it's just vertical
 	1,  # it occupies its own region, and 1 addition space to the right
 	-1,  # same as above, but to the left
 	2,
-	-2
-]
+	-2]
 
-occupy_flag = 1000
-results = []
-
-max_trial_bowl_location = 50
+max_trial_bowl_location = 1000
 max_trial_tube = 1000
+max_new_bowl = 1000
 
-"""def update_emptiness(location, tube, bowls):
-	# it updates the location of wherever the tube is occupying a space
-	if tube < 0:
-		# bowls[location+tube: tube] = occupy_flag
-		for i in range(-tube+1):
-			bowls[location-i] = occupy_flag
-	elif tube >0:
-		for i in range(tube+1):
-			bowls[location+i] = occupy_flag
-		# bowls[location: location+tube] = occupy_flag
-	else:
-		bowls[location] = occupy_flag 
-	return bowls"""
-
-
+# updates the location of wherever the tube is occupying a space
 def update_emptiness(location, tube, bowls):
-	# it updates the location of wherever the tube is occupying a space
 	if tube < 0:
-		# bowls[location+tube: tube] = occupy_flag
 		for i in range(-tube + 1):
 			bowls[location - i] = tube
 	elif tube > 0:
 		for i in range(tube + 1):
 			bowls[location + i] = tube
-	# bowls[location: location+tube] = occupy_flag
 	else:
 		bowls[location] = tube
+	return bowls
 
-	# counter_tubes_placed = counter_tubes_placed + 1
-	return bowls #, counter_tubes_placed
-
-
-"""def verify_location(location, tube):
-	# verify if the locations the tube WOULD be over are all empty
-	direction = np.sign(tube) # +1 or -1
-	# tube is the current tube 
-	width = np.abs(tube) #3 
-	is_possible = False 
-
-	for position in range(width): # go forward or backwards
-		if location-position < 0 or location-position > len(bowls):
-			is_possible = False
-		else:
-			is_possible = True
-	return is_possible"""
-
-# this is only checking the current index. Need to check +-1, +-2
+# checks if a tube can be placed at the current location (current location as well as nearby ones if applicable)
 def verify_location(location, tube, bowls):
-	# location is the current location
-	# tube is the chosen tube: -2, -1, 0, 1, 2
 	direction = np.sign(tube)
 	width = np.abs(tube)  # gives the size of the tube, either to left or right
-	is_possible = False
-	"""""# positive tube
-	if direction > 0 and location + width > 7:
-		is_possible = False
-	elif direction < 0 and location - width < 0:
-		is_possible = False
-	else:
-		is_possible = True
-	return is_possible"""
+
 	if direction > 0 and location + width > 7:
 		return False
 	if direction < 0 and location - width < 0:
@@ -87,57 +37,76 @@ def verify_location(location, tube, bowls):
 	if width == 0:
 		if bowls[location] != 10:
 			return False
-	for i in range(width):
-		if bowls[location+i*direction] != 10:
+	for i in range(width + 1):
+		if bowls[location + i * direction] != 10:
 			return False
-
-	"""if width == 1:
-		if bowls[location+tube] == occupy_flag:
-			return False
-	if width == 2:
-		if bowls[location+tube] == occupy_flag:
-			return False"""
 	return True
 
-def give_tube_placement(bowls, tubes, n):
-	counter = 0
-	for n_tubes in range(n):
-		n_trial_bowl_location = 0
-		bowl_location = np.random.choice(range(8))
-		while n_trial_bowl_location < max_trial_bowl_location:
-			# current_tube = np.random.choice(tubes)
-			if bowls[bowl_location] != occupy_flag:
-				current_tube = np.random.choice(tubes)
+def give_tube_placement(tubes, bowls, n):
+	# for n = 8
+	if n == 8:
+		return [0, 0, 0, 0, 0, 0, 0, 0]
 
-				n_trial_tube = 0
-				while n_trial_tube < max_trial_tube:
-					# print("current tube", current_tube, "start location", bowl_location)
-					if verify_location(bowl_location, current_tube, bowls):
-						# bowls[bowl_location] = current_tube
-						bowls = update_emptiness(bowl_location, current_tube, bowls)
-						counter += 1
-						"""if current_tube < 0:
-							bowls[bowl_location + current_tube: bowl_location] = occupy_flag
-						elif current_tube > 0:
-							bowls[bowl_location: bowl_location + current_tube] = occupy_flag
-						else:
-							bowls[bowl_location] = occupy_flag"""
-					else:
-						current_tube = np.random.choice(tubes)
-					n_trial_tube = n_trial_tube + 1
+	# for n = 7:
+	if n == 7:
+		bowls = [0, 0, 0, 0, 0, 0, 0, 0]
+		random_tube = np.random.choice(range(2))
+		random_location = np.random.choice(range(8))
+		if random_tube == 0:
+			bowls[random_location] = 10
+		else:
+			if random_location == 8:
+				bowls = [0, 0, 0, 0, 0, 0, 1, 1]
 			else:
+				bowls[random_location] = 1
+				bowls[random_location+1] = 1
+		return bowls
+
+	correct_assignment_found = False
+	num_full_rest = 0
+
+	while num_full_rest < max_new_bowl and correct_assignment_found == False:
+		bowls = [10, 10, 10, 10, 10, 10, 10, 10]
+		for n_tubes in range(n):
+			counter = 0
+			n_trial_bowl_location = 0
+			# bowl_location = np.random.choice(range(8))
+			while n_trial_bowl_location < max_trial_bowl_location and correct_assignment_found == False:
+				# current_tube = np.random.choice(tubes)
 				bowl_location = np.random.choice(range(8))
-			n_trial_bowl_location = n_trial_bowl_location + 1
-	print(n_trial_bowl_location, n_trial_tube)
-	assert n == counter, 'could not find satisfactory placement'
+				if bowls[bowl_location] == 10:
+					# current_tube = np.random.choice(tubes)
+					n_trial_tube = 0
+					while n_trial_tube < max_trial_tube and correct_assignment_found == False:
+						current_tube = np.random.choice(tubes)
+						if verify_location(bowl_location, current_tube, bowls):
+							# bowls[bowl_location] = current_tube
+							bowls = update_emptiness(bowl_location, current_tube, bowls)
+							print("bowls", bowls, "num_full_rest", num_full_rest, "bowl_location", bowl_location)
+							counter += 1
+							print("counter", counter)
+							if counter == n:
+								print("tube placement found")
+								return bowls
+						else:
+							current_tube = np.random.choice(tubes)
+						n_trial_tube = n_trial_tube + 1
+				else:
+					bowl_location = np.random.choice(range(8))
+				n_trial_bowl_location = n_trial_bowl_location + 1
+		num_full_rest += 1
+		# print(n_trial_bowl_location, n_trial_tube)
+		if correct_assignment_found == counter:
+			correct_assignment_found = True
 	return bowls, counter
 
-def record_trials(bowls, tubes, n):
-	final_bowl, counter = give_tube_placement(bowls, tubes, n)
-	print("The final placement is:", final_bowl)
+"""def record_trials(bowls, tubes, n):
+	bowl, counter = give_tube_placement(bowls, tubes, n)
+	print("The final placement is:", bowl)
 	print("Intended to place", n, "tubes, and", counter, "tubes are placed")
-	results.append([final_bowl, counter])
-	print(results)
+	results.append([bowl, counter])
+	print(results)"""
 
-record_trials(bowls, tubes, 3)
+print(give_tube_placement(tubes, [10, 10, 10, 10, 10, 10, 10, 10], 6))
 
+# TOOD: break, continue, ...? statements to escap loops in pythong
